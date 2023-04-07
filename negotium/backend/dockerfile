@@ -1,0 +1,30 @@
+#
+# Build stage
+#
+FROM maven:3.8.1-openjdk-17-slim AS build
+
+# WORKDIR ./pom.xml
+
+# RUN mvn clean package -DskipTests -X
+# RUN apt-get update -y --allow-unauthenticated && \
+#     apt-get upgrade -y --allow-unauthenticated && \
+#     apt-get install maven -y --allow-unauthenticated
+
+WORKDIR /backend
+
+COPY ./ ./
+
+RUN mvn -f ./pom.xml clean package -DskipTests
+
+#
+# Package stage
+#
+FROM openjdk:17.0.1-jdk-slim
+
+RUN mkdir /app/ 
+# ["sudo", "mkdir", "/app/"]
+
+WORKDIR /app
+COPY --from=build /backend/target/negotium-backend-rest-api.jar /app/negotium-backend-rest-api.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","negotium-backend-rest-api.jar"]

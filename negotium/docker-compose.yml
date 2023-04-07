@@ -1,0 +1,62 @@
+version: '3.6'
+services:
+  db:
+    image: postgres:14.1-alpine
+    #hostname: postgres
+    container_name: negotium-docker-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 8FQXgwlX2L8LiLEpPwzFVl9Yz8z42wjd01O8xAW1sFaG
+      POSTGRES_USER: negotium
+      POSTGRES_DB: negotium-db
+    ports:
+      #- 5433:5432
+      - target: 5432
+        published: 5433
+        protocol: tcp
+        mode: host
+    networks:
+      - backdb
+    expose:
+      - 5433
+
+  backend:
+    image: task-backend
+    build:
+      context: backend
+      dockerfile: ../backend/Dockerfile
+    container_name: negotium-backend-rest-api
+    restart: always
+    environment:
+      #WAIT_HOSTS: postgres:5433
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/negotium-db
+      - SPRING_DATASOURCE_USERNAME=negotium
+      - SPRING_DATASOURCE_PASSWORD=8FQXgwlX2L8LiLEpPwzFVl9Yz8z42wjd01O8xAW1sFaG
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    ports:
+      - 8090:8090
+    depends_on:
+      - db
+    networks:
+      - frontback
+      - backdb
+
+  front:
+    image: task-frontend
+    build:
+      context: frontend
+      dockerfile: ../frontend/Dockerfile
+    container_name: negotium-frontend
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - backend
+    networks:
+      - frontback
+
+networks:
+  backdb:
+    driver: bridge
+  frontback:
+    driver: bridge
